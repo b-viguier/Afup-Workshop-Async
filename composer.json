@@ -1,0 +1,18 @@
+{
+    "name": "bviguier/afup-workshop-async",
+    "description": "An AFUP workshop about asynchronous computation and generators.",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Benoit Viguier",
+            "email": "benoit.viguier.pro@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.1"
+    }
+}

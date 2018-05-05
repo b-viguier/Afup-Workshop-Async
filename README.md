@@ -1,0 +1,1 @@
+# [AFUP](https://afup.org) Workshop: Asynchronous computation and generators
