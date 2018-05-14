@@ -1,0 +1,109 @@
+#!/usr/bin/env php
+<?php
+
+// CLI input file
+if (count($argv) != 2) {
+    echo "Usage: {$argv[0]} <filename>\n";
+    exit(1);
+}
+
+$inputFilename = trim($argv[1] ?? '');
+if(!is_readable($inputFilename)) {
+    echo "Cannot read file '{$inputFilename}'\n";
+    exit(2);
+}
+$text = file_get_contents($inputFilename);
+
+// Init file system
+const BASE_DIR = __DIR__.'/web';
+rmDirRecursively(BASE_DIR);
+mkdir(BASE_DIR);
+mkdir(BASE_DIR.'/sentence');
+mkdir(BASE_DIR.'/word');
+mkdir(BASE_DIR.'/letter');
+
+//
+// Writing various API files
+//
+
+$sentences = array_map('trim', preg_split("/[.!?]+/", $text));
+writeFile(
+    '/text.json',
+    ['sentences' => array_map('sentenceFilename', $sentences)]
+);
+
+foreach ($sentences as $sentence) {
+    $words = array_map('trim', preg_split("/[\s,;:]+/", $sentence));
+    writeFile(
+        sentenceFilename($sentence),
+        ['words' => array_map('wordFilename', $words)]
+    );
+
+    foreach ($words as $word) {
+        $letters = str_split($word);
+        writeFile(
+            wordFilename($word),
+            ['letters' => array_map('letterFilename', $letters)]
+        );
+
+        foreach ($letters as $letter) {
+            writeFile(
+                letterFilename($letter),
+                ['value' => $letter]
+            );
+        }
+    }
+}
+
+// Helpers
+
+function rmDirRecursively(string $directoryPath)
+{
+    foreach (new FilesystemIterator($directoryPath) as $fileInfo) {
+        if ($fileInfo->isDir()) {
+            rmDirRecursively($fileInfo->getPathname());
+        } else {
+            unlink($fileInfo->getPathname());
+        }
+    }
+    rmdir($directoryPath);
+}
+
+function createId(string $content): string
+{
+    static $salt = null;
+    if($salt === null) {
+        $salt = rand(0, 100);
+    }
+    return substr(md5($content), 0, 6);
+}
+
+function sentenceFilename(string $sentence): string
+{
+    return '/sentence/'.createId($sentence).'.json';
+}
+
+function wordFilename(string $word): string
+{
+    return '/word/'.createId($word).'.json';
+}
+
+function letterFilename(string $word): string
+{
+    return '/letter/'.createId($word).'.json';
+}
+
+function writeFile(string $filename, array $data)
+{
+    if (file_exists($fullpath = BASE_DIR.$filename)) {
+        return;
+    };
+
+    file_put_contents(
+        BASE_DIR.$filename,
+        json_encode(
+            $data,
+            JSON_PRETTY_PRINT
+        )
+    );
+}
