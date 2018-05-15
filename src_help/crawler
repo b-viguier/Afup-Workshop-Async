@@ -1,0 +1,157 @@
+#!/usr/bin/env php
+<?php
+
+// CLI input file
+if (count($argv) != 2) {
+    echo "Usage: {$argv[0]} <root-url>\n";
+    exit(1);
+}
+
+$rootUrl = trim($argv[1] ?? '');
+
+include __DIR__.'/../vendor/autoload.php';
+
+use \Workshop\Async\EventLoop;
+use \Workshop\Async\HttpClient;
+use \Workshop\Async\Definitions\PromiseInterface;
+
+$crawler = new Crawler(
+    $eventLoop = new EventLoop(),
+    new HttpClient(),
+    $rootUrl
+);
+
+try {
+    echo "\nText:\n".$crawler->get().PHP_EOL;
+} finally {
+    echo PHP_EOL;
+}
+
+
+class Crawler
+{
+    private $eventLoop;
+    private $httpClient;
+    private $rootUrl;
+    private $startTime;
+    private $stats = [
+        'elapsed' => 0,
+        'errors' => 0,
+        'sentences' => 0,
+        'words' => 0,
+        'letters' => 0,
+        'nbReq' => 0,
+    ];
+
+    public function __construct(EventLoop $eventLoop, HttpClient $httpClient, string $rootUrl)
+    {
+        $this->eventLoop = $eventLoop;
+        $this->httpClient = $httpClient;
+        $this->rootUrl = $rootUrl;
+    }
+
+    public function get(): string
+    {
+        $this->startTime = time();
+        $this->logs();
+
+        return $this->eventLoop->wait(
+            $this->eventLoop->async(
+                $this->getText()
+            )
+        );
+    }
+
+    private function getText(): \Generator
+    {
+        $textData = json_decode(yield $this->getFromApi('/text.json'), JSON_OBJECT_AS_ARRAY);
+        $sentencesPromises = array_map(
+            [$this->eventLoop, 'async'],
+            array_map(
+                [$this, 'getSentence'],
+                $textData['sentences']
+            )
+        );
+
+        $allSentences = yield $this->eventLoop->all(...$sentencesPromises);
+
+        return implode(PHP_EOL, $allSentences);
+    }
+
+    private function getSentence(string $sentenceUrl): \Generator
+    {
+        $sentenceData = json_decode(yield $this->getFromApi($sentenceUrl), JSON_OBJECT_AS_ARRAY);
+        ++$this->stats['sentences'];
+        $wordsPromises = array_map(
+            [$this->eventLoop, 'async'],
+            array_map(
+                [$this, 'getWord'],
+                $sentenceData['words']
+            )
+        );
+
+        $allWords = yield $this->eventLoop->all(...$wordsPromises);
+
+        return implode(' ', $allWords);
+    }
+
+    private function getWord(string $wordUrl): \Generator
+    {
+        try {
+            retry:
+            $wordData = json_decode(yield $this->getFromApi($wordUrl), JSON_OBJECT_AS_ARRAY);
+        } catch (\Exception $exception) {
+            ++$this->stats['errors'];
+            goto retry; // Do not panic… 😉
+        }
+        ++$this->stats['words'];
+        $lettersPromises = array_map(
+            [$this->eventLoop, 'async'],
+            array_map(
+                [$this, 'getLetter'],
+                $wordData['letters']
+            )
+        );
+
+        $allLetters = yield $this->eventLoop->all(...$lettersPromises);
+
+        return implode('', $allLetters);
+    }
+
+    private function getLetter(string $letterUrl): \Generator
+    {
+        try {
+            retry:
+            $letterData = json_decode(yield $this->getFromApi($letterUrl), JSON_OBJECT_AS_ARRAY);
+        } catch (\Exception $exception) {
+            ++$this->stats['errors'];
+            goto retry; // Do not panic… 😉
+        }
+        ++$this->stats['letters'];
+
+        return $letterData['value'];
+    }
+
+    private function getFromApi(string $url): PromiseInterface
+    {
+        $this->logs();
+
+        return $this->httpClient->get($this->rootUrl.$url);
+    }
+
+    public function logs()
+    {
+        $elapsedTime = time() - $this->startTime;
+        if ($elapsedTime <= $this->stats['elapsed']) {
+            return;
+        }
+        $this->stats['elapsed'] = $elapsedTime;
+
+        $statsString = "";
+        foreach ($this->stats as $name => $value) {
+            $statsString .= "$name: $value\t";
+        }
+
+        echo "\r$statsString";
+    }
+}
