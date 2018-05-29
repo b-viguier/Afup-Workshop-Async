@@ -45,4 +45,14 @@ class EventLoop implements EventLoopInterface
             return new FailurePromise($exception);
         }
     }
+
+    public function all(PromiseInterface ...$promises): PromiseInterface
+    {
+        try {
+            return new SuccessPromise(array_map([$this, 'wait'], $promises));
+        } catch (\Throwable $exception) {
+            return new FailurePromise($exception);
+        }
+    }
+
 }
