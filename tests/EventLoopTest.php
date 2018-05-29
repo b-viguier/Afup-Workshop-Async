@@ -140,4 +140,39 @@ class EventLoopTest extends TestCase
             $eventLoop->wait($eventLoop->async($generator()))
         );
     }
+
+    public function test all promises resolved()
+    {
+        $expectedValues = [1, 'ok', new \StdClass(), ['array']];
+
+        $eventLoop = new \Workshop\Async\EventLoop();
+        $promises = [];
+        foreach ($expectedValues as $value) {
+            $promises[] = new \Workshop\Async\SuccessPromise($value);
+        }
+        $promise = $eventLoop->all(...$promises);
+
+        $this->assertEquals(
+            $expectedValues,
+            $eventLoop->wait($promise)
+        );
+    }
+
+    public function test all promises rejected()
+    {
+        $expectedException = new class() extends \Exception
+        {
+        };
+
+        $eventLoop = new \Workshop\Async\EventLoop();
+        $promise = $eventLoop->all(
+            new \Workshop\Async\SuccessPromise(1),
+            new \Workshop\Async\FailurePromise($expectedException),
+            new \Workshop\Async\SuccessPromise(2),
+            new \Workshop\Async\FailurePromise(new \Exception())
+        );
+
+        $this->expectException(get_class($expectedException));
+        $eventLoop->wait($promise);
+    }
 }

@@ -19,4 +19,10 @@ interface EventLoopInterface
      * they will be resolved/rejected *asynchronously*.
      */
     public function async(\Generator $generator): PromiseInterface;
+
+    /**
+     * Creates a promise that will be resolved once all input promises will be resolved.
+     * If one promise is rejected, the returned promise will be rejected.
+     */
+    public function all(PromiseInterface ...$promises): PromiseInterface;
 }
