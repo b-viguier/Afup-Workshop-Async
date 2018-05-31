@@ -175,4 +175,38 @@ class EventLoopTest extends TestCase
         $this->expectException(get_class($expectedException));
         $eventLoop->wait($promise);
     }
+
+    public function test generators can yield pending promise that will resolve()
+    {
+        $eventLoop = new \Workshop\Async\EventLoop();
+        $pendingPromise1 = new \Workshop\Async\PendingPromise();
+        $pendingPromise2 = new \Workshop\Async\PendingPromise();
+
+        $generator1 = function () use ($pendingPromise1, $pendingPromise2): \Generator {
+            $result1 = yield $pendingPromise1;
+            $pendingPromise2->resolve('generator1');
+
+            return $result1;
+        };
+
+        $generator2 = function () use ($pendingPromise1, $pendingPromise2): \Generator {
+            $pendingPromise1->resolve('generator2');
+            $result2 = yield $pendingPromise2;
+
+            return $result2;
+        };
+
+        $this->assertEquals(
+            [
+                'generator2',
+                'generator1',
+            ],
+            $eventLoop->wait(
+                $eventLoop->all(
+                    $eventLoop->async($generator1()),
+                    $eventLoop->async($generator2())
+                )
+            )
+        );
+    }
 }

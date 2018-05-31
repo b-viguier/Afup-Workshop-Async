@@ -8,6 +8,7 @@ interface PromiseInterface
 {
     const STATE_FULFILLED = 'fulfilled';
     const STATE_REJECTED = 'rejected';
+    const STATE_PENDING = 'pending';
 
     /**
      * Returns the value if the promise is fulfilled.
