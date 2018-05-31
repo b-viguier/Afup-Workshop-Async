@@ -25,4 +25,10 @@ interface EventLoopInterface
      * If one promise is rejected, the returned promise will be rejected.
      */
     public function all(PromiseInterface ...$promises): PromiseInterface;
+
+    /**
+     * Creates a promise that will be resolved… later!
+     * You can expect at least one tick of the event loop before resolution.
+     */
+    public function idle(): PromiseInterface;
 }

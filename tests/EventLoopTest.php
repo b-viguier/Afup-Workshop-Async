@@ -209,4 +209,28 @@ class EventLoopTest extends TestCase
             )
         );
     }
+
+    public function test EventLoop idle()
+    {
+        $eventLoop = new \Workshop\Async\EventLoop();
+
+        $idleCount = 0;
+        $idleGenerator = function () use ($eventLoop, &$idleCount): \Generator {
+            while (true) {
+                ++$idleCount;
+                yield $eventLoop->idle();
+            }
+        };
+
+        $otherGenerator = function (): \Generator {
+            yield new \Workshop\Async\SuccessPromise(1);
+            yield new \Workshop\Async\SuccessPromise(2);
+            yield new \Workshop\Async\SuccessPromise(3);
+        };
+
+        $eventLoop->async($idleGenerator());
+        $eventLoop->wait($eventLoop->async($otherGenerator()));
+
+        $this->assertGreaterThanOrEqual(3, $idleCount);
+    }
 }
