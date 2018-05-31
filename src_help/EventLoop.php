@@ -92,6 +92,13 @@ class EventLoop implements EventLoopInterface
         return $groupPromise;
     }
 
+    public function idle(): PromiseInterface
+    {
+        return $this->async((function (): \Generator {
+            return;
+            yield;
+        })());
+    }
 }
 
 class EventLoopTask
