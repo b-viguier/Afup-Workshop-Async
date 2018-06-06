@@ -17,7 +17,7 @@ use \Workshop\Async\Definitions\PromiseInterface;
 
 $crawler = new Crawler(
     $eventLoop = new EventLoop(),
-    new HttpClient(),
+    new HttpClient($eventLoop),
     $rootUrl
 );
 
@@ -53,7 +53,9 @@ class Crawler
     public function get(): string
     {
         $this->startTime = time();
-        $this->logs();
+        $this->eventLoop->async(
+            $this->logLoop()
+        );
 
         return $this->eventLoop->wait(
             $this->eventLoop->async(
@@ -134,24 +136,25 @@ class Crawler
 
     private function getFromApi(string $url): PromiseInterface
     {
-        $this->logs();
-
         return $this->httpClient->get($this->rootUrl.$url);
     }
 
-    public function logs()
+    public function logLoop(): \Generator
     {
-        $elapsedTime = time() - $this->startTime;
-        if ($elapsedTime <= $this->stats['elapsed']) {
-            return;
-        }
-        $this->stats['elapsed'] = $elapsedTime;
+        while (true) {
+            do {
+                yield $this->eventLoop->idle();
+                $elapsedTime = time() - $this->startTime;
+            } while ($this->stats['elapsed'] >= $elapsedTime);
+            $this->stats['elapsed'] = $elapsedTime;
+            $this->stats['nbReq'] = $this->httpClient->getConnectionsCount();
 
-        $statsString = "";
-        foreach ($this->stats as $name => $value) {
-            $statsString .= "$name: $value\t";
-        }
+            $statsString = "Stats:";
+            foreach ($this->stats as $name => $value) {
+                $statsString .= "\t$name: $value";
+            }
 
-        echo "\r$statsString";
+            echo "\r$statsString   ";
+        }
     }
 }
