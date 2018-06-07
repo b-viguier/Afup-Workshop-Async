@@ -6,27 +6,15 @@ use Workshop\Async\Definitions\PromiseInterface;
 
 class SuccessPromise implements PromiseInterface
 {
-    private $value;
+    private $ampPromise;
 
     public function __construct($value)
     {
-        $this->value = $value;
+        $this->ampPromise = new \Amp\Success($value);
     }
 
-    public function getValue()
+    public function getAmpPromise(): \Amp\Promise
     {
-        return $this->value;
+        return $this->ampPromise;
     }
-
-    public function getException(): \Throwable
-    {
-        throw new \LogicException("SuccessPromise never fails!");
-    }
-
-    public function getState(): string
-    {
-        return PromiseInterface::STATE_FULFILLED;
-    }
-
-
 }

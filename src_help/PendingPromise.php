@@ -6,57 +6,26 @@ use Workshop\Async\Definitions\PromiseInterface;
 
 class PendingPromise implements PromiseInterface
 {
-    private $value;
+    private $deferred;
 
-    private $throwable;
-
-    private $state;
 
     public function __construct()
     {
-        $this->state = PromiseInterface::STATE_PENDING;
+        $this->deferred = new \Amp\Deferred();
+    }
+
+    public function getAmpPromise(): \Amp\Promise
+    {
+        return $this->deferred->promise();
     }
 
     public function resolve($value)
     {
-        if ($this->state !== PromiseInterface::STATE_PENDING) {
-            throw new \Exception('Only pending promises can be resolved.');
-        }
-        $this->value = $value;
-        $this->state = PromiseInterface::STATE_FULFILLED;
-    }
-
-    public function getValue()
-    {
-        if ($this->state !== PromiseInterface::STATE_FULFILLED) {
-            throw new \Exception('Only fulfilled promises have a value.');
-        }
-
-        return $this->value;
+        $this->deferred->resolve($value);
     }
 
     public function reject(\Throwable $throwable)
     {
-        if ($this->state !== PromiseInterface::STATE_PENDING) {
-            throw new \Exception('Only pending promises can be rejected.');
-        }
-        $this->throwable = $throwable;
-        $this->state = PromiseInterface::STATE_REJECTED;
+        $this->deferred->fail($throwable);
     }
-
-    public function getException(): \Throwable
-    {
-        if ($this->state !== PromiseInterface::STATE_REJECTED) {
-            throw new \Exception('Only rejected promises have an exception.');
-        }
-
-        return $this->throwable;
-    }
-
-    public function getState(): string
-    {
-        return $this->state;
-    }
-
-
 }

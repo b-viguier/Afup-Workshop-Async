@@ -226,6 +226,9 @@ class EventLoopTest extends TestCase
             yield new \Workshop\Async\SuccessPromise(1);
             yield new \Workshop\Async\SuccessPromise(2);
             yield new \Workshop\Async\SuccessPromise(3);
+            yield new \Workshop\Async\SuccessPromise(3);
+            yield new \Workshop\Async\SuccessPromise(3);
+            yield new \Workshop\Async\SuccessPromise(3);
         };
 
         $eventLoop->async($idleGenerator());

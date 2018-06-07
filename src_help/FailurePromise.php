@@ -6,29 +6,16 @@ use Workshop\Async\Definitions\PromiseInterface;
 
 class FailurePromise implements PromiseInterface
 {
-    /**
-     * @var \Throwable
-     */
-    private $exception;
+    private $ampPromise;
 
     public function __construct(\Throwable $exception)
     {
-        $this->exception = $exception;
+        $this->ampPromise = new \Amp\Failure($exception);
     }
 
-    public function getValue()
+    public function getAmpPromise(): \Amp\Promise
     {
-        throw new \LogicException("FailurePromise never succeeds!");
-    }
-
-    public function getException(): \Throwable
-    {
-        return $this->exception;
-    }
-
-    public function getState(): string
-    {
-        return PromiseInterface::STATE_REJECTED;
+        return $this->ampPromise;
     }
 
 
