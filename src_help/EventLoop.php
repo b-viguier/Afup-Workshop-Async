@@ -18,4 +18,31 @@ class EventLoop implements EventLoopInterface
 
         throw new \Exception("Unhandled Promise state [{$promise->getState()}].");
     }
+
+    public function async(\Generator $generator): PromiseInterface
+    {
+        try {
+            while ($generator->valid()) {
+                $blockingPromise = $generator->current();
+
+                // Resolves blocking promise and forwards result to the generator
+                $blockingPromiseValue = null;
+                $blockingPromiseException = null;
+                try {
+                    $blockingPromiseValue = $this->wait($blockingPromise);
+                } catch (\Throwable $exception) {
+                    $blockingPromiseException = $exception;
+                }
+                if ($blockingPromiseException) {
+                    $generator->throw($blockingPromiseException);
+                } else {
+                    $generator->send($blockingPromiseValue);
+                }
+            }
+
+            return new SuccessPromise($generator->getReturn());
+        } catch (\Throwable $exception) {
+            return new FailurePromise($exception);
+        }
+    }
 }
