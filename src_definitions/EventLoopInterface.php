@@ -11,4 +11,12 @@ interface EventLoopInterface
      * @return mixed
      */
     public function wait(PromiseInterface $promise);
+
+    /**
+     * Creates a promise that will be resolved with the result of the generator.
+     * If the generator throws an exception, the promise will be rejected.
+     * The generator must yield PromiseInterface ONLY,
+     * they will be resolved/rejected *asynchronously*.
+     */
+    public function async(\Generator $generator): PromiseInterface;
 }
