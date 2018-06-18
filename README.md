@@ -25,6 +25,7 @@ and meant to be discussed face to face.
  with [CLI](https://secure.php.net/manual/en/features.commandline.introduction.php) support,
 * [`php-curl`](https://secure.php.net/manual/en/book.curl.php) extension,
 * [`git`](https://git-scm.com/),
+* [`composer`](https://getcomposer.org/),
 * a connection to Internet.
 
 You don't need to already be a Php guru, but it's recommended to be familiar with:
@@ -38,10 +39,15 @@ And of course: patience, perseverance and good mood 🙂.
 
 ### Installation
 
-You only need to clone this repository, and to go in corresponding directory.
+First, clone this repository, and go in corresponding directory.
 ```bash
 git clone git@github.com:b-viguier/Afup-Workshop-Async.git
 cd Afup-Workshop-Async
+```
+
+Then, install dependencies.
+```bash
+composer install
 ```
 
 ### Folders structure
@@ -52,7 +58,7 @@ cd Afup-Workshop-Async
 * `src_help`: If you are stuck, this folder will give you some solutions to understand how to go ahead.
 * `src_server`: The small tool I used to generate the static API, please don't care about it…
 * `tests`: Contains unit/functional tests that will drive you to your goal.
-* `vendor`: [Composer](https://getcomposer.org/) dependencies. They are versioned, you don't even need to install them.
+* `vendor`: [Composer](https://getcomposer.org/) dependencies.
 
 
 ### Workflow
